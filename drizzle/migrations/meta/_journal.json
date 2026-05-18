@@ -1,0 +1,27 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1777616482289,
+      "tag": "0000_tidy_mockingbird",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1777713007512,
+      "tag": "0001_add_settings",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1779135108553,
+      "tag": "0002_rebrand_wyweb",
+      "breakpoints": true
+    }
+  ]
+}

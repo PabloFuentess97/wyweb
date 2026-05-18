@@ -1,0 +1,187 @@
+# Stack productivo todo-en-uno · Importable como "Docker Compose" en Coolify.
+#
+# Si prefieres el approach Coolify-managed (cada servicio como Resource
+# independiente), usa la guía de docs/deploy.md sección 4 e ignora este archivo.
+#
+# Uso:
+#   1. En Coolify → New Resource → Docker Compose → pega este archivo.
+#   2. Pon los dominios en cada servicio desde la UI (Coolify añade los labels
+#      Traefik automáticamente).
+#   3. Pega las variables del bloque `app.environment` desde la UI también
+#      (mejor que tenerlas en el yaml por privacidad y rotación).
+#
+# Asume que existe una red `coolify` (la crea Coolify automáticamente al
+# importar el stack — no la definas a mano).
+
+name: wyweb-net-prod
+
+x-restart: &default-restart
+  restart: unless-stopped
+
+x-logging: &default-logging
+  logging:
+    driver: json-file
+    options:
+      max-size: "10m"
+      max-file: "5"
+
+services:
+  # ──────────────────────────────────────────────────────────────────────
+  # Aplicación Next.js
+  # ──────────────────────────────────────────────────────────────────────
+  app:
+    <<: [*default-restart, *default-logging]
+    image: ghcr.io/pablofuentess97/wyweb:${IMAGE_TAG:-latest}
+    # Alternativa: build inline (Coolify lo soporta, pero pierdes registry)
+    # build:
+    #   context: .
+    #   dockerfile: docker/Dockerfile
+    #   args:
+    #     NEXT_PUBLIC_APP_URL: https://wyweb.es
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+      minio-init:
+        condition: service_completed_successfully
+    environment:
+      # Core
+      NODE_ENV: production
+      NEXT_PUBLIC_APP_URL: https://wyweb.es
+      NEXT_PUBLIC_BRAND: uxea-soluciones
+      # Auth
+      AUTH_SECRET: ${AUTH_SECRET:?Falta AUTH_SECRET}
+      AUTH_URL: https://wyweb.es
+      AUTH_TRUST_HOST: "true"
+      # DB / Redis (URLs internas — los nombres de servicio dentro de la red)
+      DATABASE_URL: postgres://wyweb:${POSTGRES_PASSWORD:?}@db:5432/wyweb
+      REDIS_URL: redis://redis:6379
+      # Storage (apunta al servicio MinIO interno; el bucket lo prepara minio-init)
+      S3_ENDPOINT: http://minio:9000
+      S3_REGION: us-east-1
+      S3_ACCESS_KEY_ID: ${MINIO_ROOT_USER:?}
+      S3_SECRET_ACCESS_KEY: ${MINIO_ROOT_PASSWORD:?}
+      S3_BUCKET: wyweb-net
+      S3_PUBLIC_URL: https://s3.wyweb.es
+      # Email
+      RESEND_API_KEY: ${RESEND_API_KEY:?}
+      EMAIL_FROM: ${EMAIL_FROM:-Wyweb <noreply@wyweb.es>}
+      EMAIL_TO_LEADS: ${EMAIL_TO_LEADS:-info@wyweb.es}
+      # App
+      APP_ENCRYPTION_KEY: ${APP_ENCRYPTION_KEY:?}
+      CRON_SECRET: ${CRON_SECRET:?}
+      BILLING_PROVIDER: self-built
+      GITHUB_REPO_URL: ${GITHUB_REPO_URL:-https://github.com/PabloFuentess97/wyweb}
+      GITHUB_DEFAULT_BRANCH: ${GITHUB_DEFAULT_BRANCH:-main}
+      # Observabilidad (rellena cuando tengas Plausible/Glitchtip arriba)
+      SENTRY_DSN: ${SENTRY_DSN:-}
+      NEXT_PUBLIC_SENTRY_DSN: ${NEXT_PUBLIC_SENTRY_DSN:-}
+      NEXT_PUBLIC_PLAUSIBLE_DOMAIN: ${NEXT_PUBLIC_PLAUSIBLE_DOMAIN:-wyweb.es}
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--spider", "--tries=1", "http://127.0.0.1:3000/"]
+      interval: 30s
+      timeout: 5s
+      start_period: 30s
+      retries: 3
+    # Coolify pondrá los labels Traefik desde la UI cuando configures el dominio.
+    # Si lo despliegas fuera de Coolify, descomenta:
+    # labels:
+    #   - "traefik.enable=true"
+    #   - "traefik.http.routers.uxea-app.rule=Host(`wyweb.es`) || Host(`www.wyweb.es`)"
+    #   - "traefik.http.routers.uxea-app.entrypoints=websecure"
+    #   - "traefik.http.routers.uxea-app.tls.certresolver=letsencrypt"
+    #   - "traefik.http.services.uxea-app.loadbalancer.server.port=3000"
+
+  # ──────────────────────────────────────────────────────────────────────
+  # Postgres 16
+  # ──────────────────────────────────────────────────────────────────────
+  db:
+    <<: [*default-restart, *default-logging]
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: wyweb
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?}
+      POSTGRES_DB: wyweb
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./docker/postgres-init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U uxea -d uxea_net"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    # Lo ideal: NO exponer al host. Solo accesible vía red interna.
+    # Si necesitas acceso desde herramientas externas, usa SSH tunnel:
+    #   ssh -L 5432:localhost:5432 deploy@wyweb.es
+    # ports:
+    #   - "127.0.0.1:5432:5432"
+
+  # ──────────────────────────────────────────────────────────────────────
+  # Redis 7
+  # ──────────────────────────────────────────────────────────────────────
+  redis:
+    <<: [*default-restart, *default-logging]
+    image: redis:7-alpine
+    command:
+      - "redis-server"
+      - "--appendonly"
+      - "yes"
+      - "--maxmemory"
+      - "512mb"
+      - "--maxmemory-policy"
+      - "allkeys-lru"
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  # ──────────────────────────────────────────────────────────────────────
+  # MinIO (S3 self-hosted) — expón s3.wyweb.es y s3-console.wyweb.es en Coolify
+  # ──────────────────────────────────────────────────────────────────────
+  minio:
+    <<: [*default-restart, *default-logging]
+    image: minio/minio:latest
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:?}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:?}
+      # Necesarios para que las URLs firmadas apunten al dominio público
+      MINIO_SERVER_URL: https://s3.wyweb.es
+      MINIO_BROWSER_REDIRECT_URL: https://s3-console.wyweb.es
+    volumes:
+      - minio-data:/data
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+
+  # ──────────────────────────────────────────────────────────────────────
+  # Init: crea el bucket en el primer arranque
+  # ──────────────────────────────────────────────────────────────────────
+  minio-init:
+    image: minio/mc:latest
+    depends_on:
+      minio:
+        condition: service_healthy
+    entrypoint: >
+      /bin/sh -c "
+      mc alias set local http://minio:9000 ${MINIO_ROOT_USER} ${MINIO_ROOT_PASSWORD} &&
+      mc mb -p local/wyweb-net || true &&
+      mc anonymous set none local/wyweb-net &&
+      echo '✓ Bucket wyweb-net listo';
+      "
+    restart: "no"
+
+volumes:
+  postgres-data:
+  redis-data:
+  minio-data:

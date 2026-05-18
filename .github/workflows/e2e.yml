@@ -1,0 +1,107 @@
+name: E2E
+
+on:
+  pull_request:
+    types: [labeled, synchronize, opened]
+    branches: [main]
+  workflow_dispatch:
+
+# Solo corremos cuando explícitamente queremos (label `run-e2e`) o on-demand.
+# Los smoke tests son ~3min — caros para correrlos en cada commit.
+jobs:
+  e2e:
+    name: Smoke tests Playwright
+    if: |
+      github.event_name == 'workflow_dispatch' ||
+      contains(github.event.pull_request.labels.*.name, 'run-e2e')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: e2e
+          POSTGRES_PASSWORD: e2e
+          POSTGRES_DB: wyweb_e2e
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U e2e"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+
+    env:
+      DATABASE_URL: postgres://e2e:e2e@localhost:5432/wyweb_e2e
+      AUTH_SECRET: e2e-secret-min-32-chars-long-aaaaaaaa
+      AUTH_URL: http://localhost:3000
+      AUTH_TRUST_HOST: "true"
+      EMAIL_FROM: "Wyweb E2E <noreply@wyweb.test>"
+      EMAIL_TO_LEADS: "info@wyweb.test"
+      NEXT_PUBLIC_APP_URL: http://localhost:3000
+      BILLING_PROVIDER: self-built
+      NEXT_TELEMETRY_DISABLED: "1"
+      E2E_BASE_URL: http://localhost:3000
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.33.0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Enable required Postgres extensions
+        run: |
+          PGPASSWORD=e2e psql -h localhost -U e2e -d uxea_net_e2e \
+            -c 'CREATE EXTENSION IF NOT EXISTS "citext";' \
+            -c 'CREATE EXTENSION IF NOT EXISTS "pgcrypto";'
+
+      - name: Apply migrations
+        run: pnpm db:migrate
+
+      - name: Build app
+        run: pnpm build
+
+      - name: Cache Playwright browsers
+        id: pw-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-pw-${{ hashFiles('pnpm-lock.yaml') }}
+
+      - name: Install Playwright browsers
+        if: steps.pw-cache.outputs.cache-hit != 'true'
+        run: pnpm test:e2e:install
+
+      - name: Start app
+        run: |
+          pnpm start &
+          for i in $(seq 1 60); do
+            if curl -s -o /dev/null http://localhost:3000/; then
+              echo "✓ App lista"
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "::error::App no respondió tras 120s"
+          exit 1
+
+      - name: Run Playwright tests
+        run: pnpm test:e2e
+
+      - name: Upload report on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 14

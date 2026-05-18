@@ -1,0 +1,59 @@
+# ──────────────────────────────────────────────────────────────────────────
+# .dockerignore — fuera del build context para acelerar `docker build`
+# El context se evalúa desde la raíz del repo (`docker build -f docker/Dockerfile .`)
+# ──────────────────────────────────────────────────────────────────────────
+
+# Node / build artefacts
+node_modules
+.next
+.content-collections
+.turbo
+.cache
+out
+dist
+coverage
+
+# Logs / locks runtime
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# Env files (NUNCA copiar secretos al contenedor)
+.env
+.env.*
+!.env.example
+
+# Git / IDE / OS
+.git
+.gitignore
+.github
+.vscode
+.idea
+*.swp
+.DS_Store
+Thumbs.db
+
+# Docker / CI
+docker-compose*.yml
+docker/
+Dockerfile*
+.dockerignore
+
+# Docs y tests
+README.md
+CLAUDE.md
+*.test.ts
+*.test.tsx
+*.spec.ts
+*.spec.tsx
+__tests__
+e2e
+
+# Drizzle metadata pesada (las migraciones SQL sí se copian)
+drizzle/meta
+
+# TypeScript build cache
+tsconfig.tsbuildinfo
+*.tsbuildinfo

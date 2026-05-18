@@ -1,0 +1,176 @@
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: "Branch / tag / SHA a desplegar"
+        required: false
+        default: main
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false  # No cancelar deploys en curso — finaliza el actual
+
+permissions:
+  contents: read
+  packages: write  # Push a GHCR
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}  # → ghcr.io/pablofuentess97/wyweb
+
+jobs:
+  # ──────────────────────────────────────────────────────────────────────
+  # 1) Validación rápida antes de gastar minutos en build/push
+  # ──────────────────────────────────────────────────────────────────────
+  validate:
+    name: Validate (lint + typecheck)
+    runs-on: ubuntu-24.04
+    env:
+      DATABASE_URL: postgres://ci:ci@localhost:5432/ci
+      AUTH_SECRET: ci-secret-min-32-chars-long-aaaaaaaa
+      NEXT_TELEMETRY_DISABLED: "1"
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.ref || github.ref }}
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.33.0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm lint
+      - run: pnpm typecheck
+
+  # ──────────────────────────────────────────────────────────────────────
+  # 2) Build + push de la imagen Docker a GHCR (cache buildx)
+  # ──────────────────────────────────────────────────────────────────────
+  build-and-push:
+    name: Build & push image
+    needs: validate
+    runs-on: ubuntu-24.04
+    outputs:
+      image-tag: ${{ steps.meta.outputs.version }}
+      image-digest: ${{ steps.build.outputs.digest }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.ref || github.ref }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract image metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          # Tags resultantes:
+          #   - latest (solo en main)
+          #   - main-<sha7>
+          #   - <git-sha>
+          tags: |
+            type=raw,value=latest,enable={{is_default_branch}}
+            type=sha,format=long
+            type=ref,event=branch,suffix=-{{sha}}
+
+      - name: Build & push
+        id: build
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: docker/Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          build-args: |
+            NEXT_PUBLIC_APP_URL=https://wyweb.es
+            NEXT_PUBLIC_BRAND=uxea-soluciones
+            NEXT_PUBLIC_PLAUSIBLE_DOMAIN=wyweb.es
+
+  # ──────────────────────────────────────────────────────────────────────
+  # 3) Trigger redeploy en Coolify
+  # ──────────────────────────────────────────────────────────────────────
+  deploy:
+    name: Trigger Coolify redeploy
+    needs: build-and-push
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Trigger webhook
+        env:
+          COOLIFY_WEBHOOK_URL: ${{ secrets.COOLIFY_WEBHOOK_URL }}
+          COOLIFY_API_TOKEN: ${{ secrets.COOLIFY_API_TOKEN }}
+          IMAGE_TAG: ${{ needs.build-and-push.outputs.image-tag }}
+        run: |
+          if [ -z "$COOLIFY_WEBHOOK_URL" ] || [ -z "$COOLIFY_API_TOKEN" ]; then
+            echo "::error::Faltan secrets COOLIFY_WEBHOOK_URL o COOLIFY_API_TOKEN"
+            exit 1
+          fi
+
+          echo "▸ Triggering Coolify redeploy for image tag: ${IMAGE_TAG}"
+
+          # Coolify acepta GET con bearer; algunos despliegues usan POST.
+          # Probamos ambos para máxima compatibilidad.
+          response=$(curl -sS -w "\n%{http_code}" \
+            -X GET "${COOLIFY_WEBHOOK_URL}" \
+            -H "Authorization: Bearer ${COOLIFY_API_TOKEN}")
+
+          body=$(echo "$response" | head -n -1)
+          status=$(echo "$response" | tail -n 1)
+
+          echo "▸ HTTP status: $status"
+          echo "▸ Response body: $body"
+
+          if [ "$status" -lt 200 ] || [ "$status" -ge 400 ]; then
+            echo "::error::Coolify webhook devolvió $status"
+            exit 1
+          fi
+
+          echo "✓ Redeploy disparado en Coolify"
+
+  # ──────────────────────────────────────────────────────────────────────
+  # 4) Smoke test post-deploy (opcional, no bloquea el deploy)
+  # ──────────────────────────────────────────────────────────────────────
+  smoke-test:
+    name: Smoke test
+    needs: deploy
+    runs-on: ubuntu-24.04
+    continue-on-error: true
+    steps:
+      - name: Wait for app to be live
+        run: |
+          echo "▸ Esperando 60s para que Coolify complete el swap…"
+          sleep 60
+
+      - name: Health check
+        run: |
+          for i in 1 2 3 4 5; do
+            echo "▸ Intento $i — GET https://wyweb.es/"
+            status=$(curl -sS -o /dev/null -w "%{http_code}" https://wyweb.es/ || echo "000")
+            if [ "$status" = "200" ]; then
+              echo "✓ App responde 200"
+              exit 0
+            fi
+            echo "▸ Status $status, reintento en 30s…"
+            sleep 30
+          done
+          echo "::warning::Smoke test falló tras 5 intentos. Revisa logs en Coolify."
+          exit 1
