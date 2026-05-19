@@ -2,7 +2,10 @@ import { NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { db } from '@/lib/db';
 import { auditLog } from '@/lib/db/schema';
-import { getDocumentForClient } from '@/lib/db/queries/documents';
+import {
+  getAdminDocumentById,
+  getDocumentForClient,
+} from '@/lib/db/queries/documents';
 import {
   getPresignedGetUrl,
   StorageNotConfiguredError,
@@ -11,25 +14,19 @@ import {
 export const runtime = 'nodejs';
 
 /**
- * Endpoint de descarga de documentos del área cliente.
+ * Endpoint de descarga de documentos.
  *
- * Flujo:
- *  1. Auth + RBAC: requiere `client_*`.
- *  2. Verifica que el documento pertenece a uno de los `customerIds` y es
- *     `visible_to_client = true`.
- *  3. Genera URL firmada GET a S3/MinIO (TTL 5 min) con Content-Disposition
- *     forzando el nombre original.
- *  4. Audit log de la descarga.
- *  5. 302 redirect a la URL firmada.
+ * - staff_*: descarga cualquier documento (incluso visibilidad oculta).
+ * - client_*: solo documentos de sus customers con `visibleToClient = true`.
  *
- * Si S3 no está configurado, devuelve 503 con explicación clara.
+ * Genera URL firmada GET a S3/MinIO (TTL 5 min), audit log, 302 redirect.
  */
 export async function GET(
   req: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
   const session = await auth();
-  if (!session?.user || !session.user.role.startsWith('client_')) {
+  if (!session?.user) {
     return NextResponse.json(
       { error: { code: 'UNAUTHORIZED', message: 'Sesión no válida.' } },
       { status: 401 },
@@ -37,7 +34,11 @@ export async function GET(
   }
 
   const { id } = await params;
-  const doc = await getDocumentForClient(id, session.user.customerIds);
+  const isStaff = session.user.role.startsWith('staff_');
+
+  const doc = isStaff
+    ? await getAdminDocumentById(id)
+    : await getDocumentForClient(id, session.user.customerIds);
   if (!doc) {
     return NextResponse.json(
       {
