@@ -37,7 +37,7 @@ services:
     #   context: .
     #   dockerfile: docker/Dockerfile
     #   args:
-    #     NEXT_PUBLIC_APP_URL: https://wyweb.es
+    #     NEXT_PUBLIC_APP_URL: https://wyweb.net
     depends_on:
       db:
         condition: service_healthy
@@ -50,11 +50,11 @@ services:
     environment:
       # Core
       NODE_ENV: production
-      NEXT_PUBLIC_APP_URL: https://wyweb.es
+      NEXT_PUBLIC_APP_URL: https://wyweb.net
       NEXT_PUBLIC_BRAND: uxea-soluciones
       # Auth
       AUTH_SECRET: ${AUTH_SECRET:?Falta AUTH_SECRET}
-      AUTH_URL: https://wyweb.es
+      AUTH_URL: https://wyweb.net
       AUTH_TRUST_HOST: "true"
       # DB / Redis (URLs internas — los nombres de servicio dentro de la red)
       DATABASE_URL: postgres://wyweb:${POSTGRES_PASSWORD:?}@db:5432/wyweb
@@ -65,11 +65,11 @@ services:
       S3_ACCESS_KEY_ID: ${MINIO_ROOT_USER:?}
       S3_SECRET_ACCESS_KEY: ${MINIO_ROOT_PASSWORD:?}
       S3_BUCKET: wyweb-net
-      S3_PUBLIC_URL: https://s3.wyweb.es
+      S3_PUBLIC_URL: https://s3.wyweb.net
       # Email
       RESEND_API_KEY: ${RESEND_API_KEY:?}
-      EMAIL_FROM: ${EMAIL_FROM:-Wyweb <noreply@wyweb.es>}
-      EMAIL_TO_LEADS: ${EMAIL_TO_LEADS:-info@wyweb.es}
+      EMAIL_FROM: ${EMAIL_FROM:-Wyweb <noreply@wyweb.net>}
+      EMAIL_TO_LEADS: ${EMAIL_TO_LEADS:-info@wyweb.net}
       # App
       APP_ENCRYPTION_KEY: ${APP_ENCRYPTION_KEY:?}
       CRON_SECRET: ${CRON_SECRET:?}
@@ -79,7 +79,7 @@ services:
       # Observabilidad (rellena cuando tengas Plausible/Glitchtip arriba)
       SENTRY_DSN: ${SENTRY_DSN:-}
       NEXT_PUBLIC_SENTRY_DSN: ${NEXT_PUBLIC_SENTRY_DSN:-}
-      NEXT_PUBLIC_PLAUSIBLE_DOMAIN: ${NEXT_PUBLIC_PLAUSIBLE_DOMAIN:-wyweb.es}
+      NEXT_PUBLIC_PLAUSIBLE_DOMAIN: ${NEXT_PUBLIC_PLAUSIBLE_DOMAIN:-wyweb.net}
     healthcheck:
       test: ["CMD", "wget", "--quiet", "--spider", "--tries=1", "http://127.0.0.1:3000/"]
       interval: 30s
@@ -90,7 +90,7 @@ services:
     # Si lo despliegas fuera de Coolify, descomenta:
     # labels:
     #   - "traefik.enable=true"
-    #   - "traefik.http.routers.uxea-app.rule=Host(`wyweb.es`) || Host(`www.wyweb.es`)"
+    #   - "traefik.http.routers.uxea-app.rule=Host(`wyweb.net`) || Host(`www.wyweb.net`)"
     #   - "traefik.http.routers.uxea-app.entrypoints=websecure"
     #   - "traefik.http.routers.uxea-app.tls.certresolver=letsencrypt"
     #   - "traefik.http.services.uxea-app.loadbalancer.server.port=3000"
@@ -116,7 +116,7 @@ services:
       start_period: 20s
     # Lo ideal: NO exponer al host. Solo accesible vía red interna.
     # Si necesitas acceso desde herramientas externas, usa SSH tunnel:
-    #   ssh -L 5432:localhost:5432 deploy@wyweb.es
+    #   ssh -L 5432:localhost:5432 deploy@wyweb.net
     # ports:
     #   - "127.0.0.1:5432:5432"
 
@@ -143,7 +143,7 @@ services:
       retries: 5
 
   # ──────────────────────────────────────────────────────────────────────
-  # MinIO (S3 self-hosted) — expón s3.wyweb.es y s3-console.wyweb.es en Coolify
+  # MinIO (S3 self-hosted) — expón s3.wyweb.net y s3-console.wyweb.net en Coolify
   # ──────────────────────────────────────────────────────────────────────
   minio:
     <<: [*default-restart, *default-logging]
@@ -153,8 +153,8 @@ services:
       MINIO_ROOT_USER: ${MINIO_ROOT_USER:?}
       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:?}
       # Necesarios para que las URLs firmadas apunten al dominio público
-      MINIO_SERVER_URL: https://s3.wyweb.es
-      MINIO_BROWSER_REDIRECT_URL: https://s3-console.wyweb.es
+      MINIO_SERVER_URL: https://s3.wyweb.net
+      MINIO_BROWSER_REDIRECT_URL: https://s3-console.wyweb.net
     volumes:
       - minio-data:/data
     healthcheck:

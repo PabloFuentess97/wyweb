@@ -18,8 +18,8 @@ la primera vez**, luego push-to-deploy automático.
 │     ├─ db                 → Postgres 16 (volumen persistente)      │
 │     ├─ redis              → Redis 7 (rate-limit / sesiones)        │
 │     ├─ minio              → S3 self-hosted (PDFs, documentos)      │
-│     ├─ plausible          → analytics.wyweb.es                     │
-│     └─ glitchtip          → errors.wyweb.es                        │
+│     ├─ plausible          → analytics.wyweb.net                     │
+│     └─ glitchtip          → errors.wyweb.net                        │
 │                                                                    │
 │   Backups → Hetzner Storage Box (pgBackRest + WAL)                 │
 └────────────────────────────────────────────────────────────────────┘
@@ -27,12 +27,12 @@ la primera vez**, luego push-to-deploy automático.
 
 | Subdominio              | Servicio       | Acceso             |
 | ----------------------- | -------------- | ------------------ |
-| `wyweb.es`              | App Next.js    | Público            |
-| `s3.wyweb.es`           | MinIO API      | Público (firmado)  |
-| `s3-console.wyweb.es`   | MinIO consola  | Basic Auth + IP    |
-| `analytics.wyweb.es`    | Plausible      | Basic Auth         |
-| `errors.wyweb.es`       | Glitchtip      | Basic Auth         |
-| `coolify.wyweb.es`      | Coolify panel  | Solo IP allowlist  |
+| `wyweb.net`              | App Next.js    | Público            |
+| `s3.wyweb.net`           | MinIO API      | Público (firmado)  |
+| `s3-console.wyweb.net`   | MinIO consola  | Basic Auth + IP    |
+| `analytics.wyweb.net`    | Plausible      | Basic Auth         |
+| `errors.wyweb.net`       | Glitchtip      | Basic Auth         |
+| `coolify.wyweb.net`      | Coolify panel  | Solo IP allowlist  |
 
 ---
 
@@ -127,7 +127,7 @@ Configura los registros A (y AAAA si quieres IPv6) en tu registrar:
 
 | Nombre              | Tipo | Valor          | TTL   |
 | ------------------- | ---- | -------------- | ----- |
-| `@` (wyweb.es)      | A    | `49.12.34.56`  | 300   |
+| `@` (wyweb.net)      | A    | `49.12.34.56`  | 300   |
 | `www`               | A    | `49.12.34.56`  | 300   |
 | `s3`                | A    | `49.12.34.56`  | 300   |
 | `s3-console`        | A    | `49.12.34.56`  | 300   |
@@ -137,8 +137,8 @@ Configura los registros A (y AAAA si quieres IPv6) en tu registrar:
 
 Verifica que se han propagado:
 ```bash
-dig +short wyweb.es
-dig +short s3.wyweb.es
+dig +short wyweb.net
+dig +short s3.wyweb.net
 ```
 
 Espera a que devuelvan tu IP antes de seguir (Let's Encrypt fallará si DNS no está listo).
@@ -160,11 +160,11 @@ El script hace:
 
 Abre `http://49.12.34.56:8000` en el navegador, completa el setup wizard:
 1. Crea tu cuenta de admin.
-2. **Settings → Instance** → pon `coolify.wyweb.es` como FQDN.
+2. **Settings → Instance** → pon `coolify.wyweb.net` como FQDN.
 3. **Settings → Instance → Public IPv4** → confirma `49.12.34.56`.
 4. Habilita Let's Encrypt en `Settings → Email`.
 
-A partir de aquí accede vía `https://coolify.wyweb.es` (Coolify saca cert
+A partir de aquí accede vía `https://coolify.wyweb.net` (Coolify saca cert
 automáticamente para sí mismo).
 
 ---
@@ -220,8 +220,8 @@ services:
     environment:
       MINIO_ROOT_USER: ${MINIO_ROOT_USER}
       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
-      MINIO_BROWSER_REDIRECT_URL: https://s3-console.wyweb.es
-      MINIO_SERVER_URL: https://s3.wyweb.es
+      MINIO_BROWSER_REDIRECT_URL: https://s3-console.wyweb.net
+      MINIO_SERVER_URL: https://s3.wyweb.net
     volumes:
       - minio-data:/data
     labels:
@@ -234,18 +234,18 @@ volumes:
 ```
 
 En la UI de Coolify, en el servicio MinIO:
-1. **Domains**: `s3.wyweb.es` → puerto interno `9000` (API S3).
-2. **Domains**: `s3-console.wyweb.es` → puerto interno `9001` (consola web).
+1. **Domains**: `s3.wyweb.net` → puerto interno `9000` (API S3).
+2. **Domains**: `s3-console.wyweb.net` → puerto interno `9001` (consola web).
 3. **Variables**:
    - `MINIO_ROOT_USER`: genera con `openssl rand -hex 12`.
    - `MINIO_ROOT_PASSWORD`: genera con `openssl rand -base64 32`.
 4. **Save & Deploy**.
 
-Verifica SSL: `https://s3.wyweb.es/minio/health/live` debe devolver 200.
+Verifica SSL: `https://s3.wyweb.net/minio/health/live` debe devolver 200.
 
 #### Crear bucket inicial
 
-Desde la consola en `https://s3-console.wyweb.es`:
+Desde la consola en `https://s3-console.wyweb.net`:
 1. Login con `MINIO_ROOT_USER` / `MINIO_ROOT_PASSWORD`.
 2. **Buckets → Create Bucket** → nombre `wyweb-net`. Sin object locking, sin
    versioning (puedes activar versioning más tarde si quieres).
@@ -266,7 +266,7 @@ Desde la consola en `https://s3-console.wyweb.es`:
    - **Build Pack**: `Dockerfile`.
    - **Dockerfile location**: `docker/Dockerfile`.
    - **Base directory**: `/`.
-3. **Domain**: `https://wyweb.es,https://www.wyweb.es` (Coolify hará el
+3. **Domain**: `https://wyweb.net,https://www.wyweb.net` (Coolify hará el
    redirect www → apex).
 4. **Port**: `3000`.
 
@@ -277,11 +277,11 @@ Pega en **Environment Variables** (Coolify las inyecta en build y runtime):
 ```
 # Core
 NODE_ENV=production
-NEXT_PUBLIC_APP_URL=https://wyweb.es
+NEXT_PUBLIC_APP_URL=https://wyweb.net
 
 # Auth.js (genera con: openssl rand -base64 48)
 AUTH_SECRET=<48 bytes base64>
-AUTH_URL=https://wyweb.es
+AUTH_URL=https://wyweb.net
 AUTH_TRUST_HOST=true
 
 # DB / Redis (URLs internas que te dio Coolify)
@@ -289,17 +289,17 @@ DATABASE_URL=postgres://wyweb:<pwd>@wyweb-net-db:5432/wyweb
 REDIS_URL=redis://wyweb-net-redis:6379
 
 # Storage (S3 service account, no las root credentials)
-S3_ENDPOINT=https://s3.wyweb.es
+S3_ENDPOINT=https://s3.wyweb.net
 S3_REGION=us-east-1
 S3_ACCESS_KEY_ID=<service account access key>
 S3_SECRET_ACCESS_KEY=<service account secret>
 S3_BUCKET=wyweb-net
-S3_PUBLIC_URL=https://s3.wyweb.es
+S3_PUBLIC_URL=https://s3.wyweb.net
 
-# Email (Resend con dominio wyweb.es verificado)
+# Email (Resend con dominio wyweb.net verificado)
 RESEND_API_KEY=re_xxx
-EMAIL_FROM=Wyweb <noreply@wyweb.es>
-EMAIL_TO_LEADS=info@wyweb.es
+EMAIL_FROM=Wyweb <noreply@wyweb.net>
+EMAIL_TO_LEADS=info@wyweb.net
 
 # App
 APP_ENCRYPTION_KEY=<32+ chars: openssl rand -base64 32>
@@ -315,7 +315,7 @@ GITHUB_DEFAULT_BRANCH=main
 # Observabilidad (cuando Glitchtip esté arriba — paso 38)
 SENTRY_DSN=
 NEXT_PUBLIC_SENTRY_DSN=
-NEXT_PUBLIC_PLAUSIBLE_DOMAIN=wyweb.es
+NEXT_PUBLIC_PLAUSIBLE_DOMAIN=wyweb.net
 ```
 
 > ⚠️ **Build args vs runtime**: las que empiezan con `NEXT_PUBLIC_` se
@@ -328,7 +328,7 @@ NEXT_PUBLIC_PLAUSIBLE_DOMAIN=wyweb.es
 2. **Deploy** → Coolify clona, construye la imagen Docker (usa `docker/Dockerfile`),
    ejecuta el container con `entrypoint.sh` (que aplica migraciones primero).
 3. Sigue logs en tiempo real desde la UI.
-4. Cuando el healthcheck pase verde → la app está live en `https://wyweb.es`.
+4. Cuando el healthcheck pase verde → la app está live en `https://wyweb.net`.
 
 ---
 
@@ -355,7 +355,7 @@ Pipeline:
    con tags `:latest`, `:<git-sha>`, `:main-<sha7>`. Cache buildx vía
    GitHub Actions (`type=gha`).
 3. **deploy** — `curl` al webhook de Coolify con bearer token.
-4. **smoke-test** — espera 60s y golpea `https://wyweb.es/` esperando 200
+4. **smoke-test** — espera 60s y golpea `https://wyweb.net/` esperando 200
    (no bloqueante; solo warning si falla).
 
 ### 6.3 Secrets requeridos en GitHub
@@ -364,7 +364,7 @@ Ve a **GitHub → repo → Settings → Secrets and variables → Actions** y cr
 
 | Secret                  | De dónde sacarlo                                     |
 | ----------------------- | ---------------------------------------------------- |
-| `COOLIFY_WEBHOOK_URL`   | Coolify → app → **Webhooks** → "Deploy webhook URL". Suele tener el formato `https://coolify.wyweb.es/api/v1/deploy?uuid=xxx` |
+| `COOLIFY_WEBHOOK_URL`   | Coolify → app → **Webhooks** → "Deploy webhook URL". Suele tener el formato `https://coolify.wyweb.net/api/v1/deploy?uuid=xxx` |
 | `COOLIFY_API_TOKEN`     | Coolify → **Profile → API tokens → Create token**. Permisos: `deploy` sobre el resource de la app. |
 
 `GITHUB_TOKEN` ya viene incluido (auto-emitido) y se usa para autenticar
@@ -460,8 +460,8 @@ desde `/admin/usuarios`).
 
 | Check                                           | Cómo                                          |
 | ----------------------------------------------- | --------------------------------------------- |
-| Home pública carga                              | `curl -I https://wyweb.es` → 200              |
-| HTTPS forzado                                   | `curl -I http://wyweb.es` → 301 a https       |
+| Home pública carga                              | `curl -I https://wyweb.net` → 200              |
+| HTTPS forzado                                   | `curl -I http://wyweb.net` → 301 a https       |
 | Login funciona                                  | UI: `/login` con tu admin                     |
 | Migraciones aplicadas                           | logs del entrypoint: "✓ Migraciones aplicadas" |
 | MinIO accesible desde la app                    | sube un documento desde `/admin/documentos`   |
@@ -494,7 +494,7 @@ desde `/admin/usuarios`).
 | Hetzner Storage Box BX21 (1 TB) | ~4 €   |
 | Hetzner Snapshots automáticos | ~1 €   |
 | Resend (cuota free / paid)    | 0–20 € |
-| Dominio `wyweb.es`            | ~12 €/año |
+| Dominio `wyweb.net`            | ~12 €/año |
 | **Total infra base**          | **~35 €/mes** |
 
 Comparativa: misma capacidad en Vercel + Supabase + Resend rondaría 80–150
@@ -514,7 +514,7 @@ con la flag de Coolify.
 
 ### Let's Encrypt no genera el cert
 DNS no propagado o el firewall bloquea puerto 80. Verifica con
-`dig +short wyweb.es` y `curl -I http://wyweb.es`.
+`dig +short wyweb.net` y `curl -I http://wyweb.net`.
 
 ### Migración falla por permisos
 La BD necesita las extensions `citext` y `pgcrypto`. El init script en sección
@@ -525,7 +525,7 @@ CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 ```
 
 ### MinIO firma URLs con localhost
-Falta `MINIO_SERVER_URL=https://s3.wyweb.es` en las env del servicio.
+Falta `MINIO_SERVER_URL=https://s3.wyweb.net` en las env del servicio.
 
 ### `argon2` no carga (musl error)
 La imagen runner está sobre alpine pero faltan `libc6-compat`. Verifica el

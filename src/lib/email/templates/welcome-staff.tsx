@@ -78,10 +78,10 @@ export function WelcomeStaffEmail({ name, setupUrl, role, expiresAt }: Props) {
                 <strong>El enlace caduca el {expiresStr}.</strong> Si tienes dudas o no
                 esperabas este correo, escribe a{' '}
                 <Link
-                  href="mailto:hola@wyweb.es"
+                  href="mailto:hola@wyweb.net"
                   className="text-[#3B5BDB] underline-offset-4"
                 >
-                  hola@wyweb.es
+                  hola@wyweb.net
                 </Link>
                 .
               </Text>

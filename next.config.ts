@@ -3,11 +3,11 @@ import { withContentCollections } from '@content-collections/next';
 
 const isProd = process.env.NODE_ENV === 'production';
 const PLAUSIBLE_HOST =
-  process.env.NEXT_PUBLIC_PLAUSIBLE_HOST ?? 'https://analytics.wyweb.es';
+  process.env.NEXT_PUBLIC_PLAUSIBLE_HOST ?? 'https://analytics.wyweb.net';
 const SENTRY_HOST = process.env.NEXT_PUBLIC_SENTRY_DSN
   ? new URL(process.env.NEXT_PUBLIC_SENTRY_DSN).origin
-  : 'https://errors.wyweb.es';
-const S3_PUBLIC = process.env.S3_PUBLIC_URL ?? 'https://s3.wyweb.es';
+  : 'https://errors.wyweb.net';
+const S3_PUBLIC = process.env.S3_PUBLIC_URL ?? 'https://s3.wyweb.net';
 
 /**
  * Content-Security-Policy estricta. Notas:

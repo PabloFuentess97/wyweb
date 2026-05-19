@@ -102,9 +102,9 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
           build-args: |
-            NEXT_PUBLIC_APP_URL=https://wyweb.es
+            NEXT_PUBLIC_APP_URL=https://wyweb.net
             NEXT_PUBLIC_BRAND=uxea-soluciones
-            NEXT_PUBLIC_PLAUSIBLE_DOMAIN=wyweb.es
+            NEXT_PUBLIC_PLAUSIBLE_DOMAIN=wyweb.net
 
   # ──────────────────────────────────────────────────────────────────────
   # 3) Trigger redeploy en Coolify
@@ -163,8 +163,8 @@ jobs:
       - name: Health check
         run: |
           for i in 1 2 3 4 5; do
-            echo "▸ Intento $i — GET https://wyweb.es/"
-            status=$(curl -sS -o /dev/null -w "%{http_code}" https://wyweb.es/ || echo "000")
+            echo "▸ Intento $i — GET https://wyweb.net/"
+            status=$(curl -sS -o /dev/null -w "%{http_code}" https://wyweb.net/ || echo "000")
             if [ "$status" = "200" ]; then
               echo "✓ App responde 200"
               exit 0

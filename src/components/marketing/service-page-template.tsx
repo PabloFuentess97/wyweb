@@ -194,7 +194,7 @@ export function ServicePageTemplate({ service }: Props) {
             }
             description="Sin compromiso ni alta. Si encaja, planteamos arquitectura, plazos y SLA. Si no, te decimos a quién recurrir."
             primaryCta={{ label: 'Solicitar propuesta', href: '/contacto' }}
-            secondaryCta={{ label: 'hola@wyweb.es', href: 'mailto:hola@wyweb.es' }}
+            secondaryCta={{ label: 'hola@wyweb.net', href: 'mailto:hola@wyweb.net' }}
           />
         </div>
       </section>
@@ -211,8 +211,8 @@ export function ServicePageTemplate({ service }: Props) {
             provider: {
               '@type': 'Organization',
               name: 'Wyweb',
-              url: 'https://wyweb.es',
-              email: 'hola@wyweb.es',
+              url: 'https://wyweb.net',
+              email: 'hola@wyweb.net',
               address: {
                 '@type': 'PostalAddress',
                 addressCountry: 'ES',

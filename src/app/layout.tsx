@@ -19,7 +19,7 @@ const mono = JetBrains_Mono({
   weight: ['400', '500', '600'],
 });
 
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://wyweb.es';
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://wyweb.net';
 
 export const metadata: Metadata = {
   title: {

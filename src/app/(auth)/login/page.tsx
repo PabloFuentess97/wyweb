@@ -30,10 +30,10 @@ export default async function LoginPage({
           Acceso para clientes con servicio activo y para el equipo de Wyweb. Si necesitas
           una cuenta, escríbenos a{' '}
           <a
-            href="mailto:hola@wyweb.es"
+            href="mailto:hola@wyweb.net"
             className="text-[var(--color-accent)] underline-offset-4 hover:underline"
           >
-            hola@wyweb.es
+            hola@wyweb.net
           </a>
           .
         </p>

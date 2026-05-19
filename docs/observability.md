@@ -10,8 +10,8 @@ GDPR-friendly.
 
 | Servicio   | Subdominio              | Propósito                        | Coste extra |
 | ---------- | ----------------------- | -------------------------------- | ----------- |
-| Plausible  | `analytics.wyweb.es`    | Pageviews, sources, devices, etc. Sin cookies. | 0 €         |
-| Glitchtip  | `errors.wyweb.es`       | Stack traces, breadcrumbs, agrupado por hash. Compatible con Sentry SDK. | 0 €         |
+| Plausible  | `analytics.wyweb.net`    | Pageviews, sources, devices, etc. Sin cookies. | 0 €         |
+| Glitchtip  | `errors.wyweb.net`       | Stack traces, breadcrumbs, agrupado por hash. Compatible con Sentry SDK. | 0 €         |
 
 Ambos viven en el mismo VPS Hetzner que la app, gestionados por Coolify.
 
@@ -32,21 +32,21 @@ El repo trae `docker-compose.observability.yml` con ambos stacks.
 
 ```bash
 # Plausible
-PLAUSIBLE_BASE_URL=https://analytics.wyweb.es
+PLAUSIBLE_BASE_URL=https://analytics.wyweb.net
 PLAUSIBLE_DB_PASSWORD=$(openssl rand -base64 24)
 PLAUSIBLE_SECRET_KEY_BASE=$(openssl rand -base64 64)
 PLAUSIBLE_TOTP_VAULT_KEY=$(openssl rand -base64 32)
-PLAUSIBLE_FROM_EMAIL=noreply@wyweb.es
+PLAUSIBLE_FROM_EMAIL=noreply@wyweb.net
 PLAUSIBLE_SMTP_HOST=smtp.resend.com
 PLAUSIBLE_SMTP_PORT=587
 PLAUSIBLE_SMTP_USER=resend
 PLAUSIBLE_SMTP_PASSWORD=re_xxx  # API key de Resend
 
 # Glitchtip
-GLITCHTIP_DOMAIN=https://errors.wyweb.es
+GLITCHTIP_DOMAIN=https://errors.wyweb.net
 GLITCHTIP_DB_PASSWORD=$(openssl rand -base64 24)
 GLITCHTIP_SECRET_KEY=$(openssl rand -base64 50)
-GLITCHTIP_DEFAULT_FROM_EMAIL=errors@wyweb.es
+GLITCHTIP_DEFAULT_FROM_EMAIL=errors@wyweb.net
 GLITCHTIP_EMAIL_URL=smtp+tls://resend:re_xxx@smtp.resend.com:587
 ```
 
@@ -63,20 +63,20 @@ DNS debe estar apuntando ya (configurado en [deploy.md §2](./deploy.md)).
 
 Tras el primer deploy:
 
-1. Visita `https://analytics.wyweb.es` → te lleva a `/register` (la primera
+1. Visita `https://analytics.wyweb.net` → te lleva a `/register` (la primera
    cuenta tiene rol owner).
 2. Crea tu cuenta admin.
-3. **New site** → `wyweb.es` → timezone `Europe/Madrid`, currency `EUR`.
+3. **New site** → `wyweb.net` → timezone `Europe/Madrid`, currency `EUR`.
 4. Plausible te da un script — **ignóralo**: ya está montado en la app
    (sección 2).
 
 ### 1.5 Setup inicial Glitchtip
 
-1. Visita `https://errors.wyweb.es` → register (la primera cuenta es admin).
+1. Visita `https://errors.wyweb.net` → register (la primera cuenta es admin).
 2. **Organization → Create**: `Wyweb`.
 3. **Project → Create**: `wyweb-net`, plataforma **JavaScript / Next.js**.
 4. Copia el **DSN** que te muestra Glitchtip (formato
-   `https://abc@errors.wyweb.es/1`).
+   `https://abc@errors.wyweb.net/1`).
 
 > Glitchtip emite tanto el DSN privado (server-side) como el público
 > (client-side). Para Sentry SDK, el mismo DSN funciona en ambos contextos.
@@ -93,8 +93,8 @@ configurada. Setup mínimo:
 
 ```bash
 # .env de la app (en Coolify)
-NEXT_PUBLIC_PLAUSIBLE_DOMAIN=wyweb.es
-NEXT_PUBLIC_PLAUSIBLE_HOST=https://analytics.wyweb.es
+NEXT_PUBLIC_PLAUSIBLE_DOMAIN=wyweb.net
+NEXT_PUBLIC_PLAUSIBLE_HOST=https://analytics.wyweb.net
 ```
 
 El script:
@@ -112,8 +112,8 @@ Setup en Coolify:
 
 ```bash
 # .env de la app
-SENTRY_DSN=https://abc@errors.wyweb.es/1
-NEXT_PUBLIC_SENTRY_DSN=https://abc@errors.wyweb.es/1
+SENTRY_DSN=https://abc@errors.wyweb.net/1
+NEXT_PUBLIC_SENTRY_DSN=https://abc@errors.wyweb.net/1
 GIT_SHA=${GITHUB_SHA}  # opcional, para correlacionar errores con releases
 ```
 
@@ -128,7 +128,7 @@ Comportamiento:
 
 ```bash
 # Provoca un error desde la app para confirmar el pipeline
-curl -X GET https://wyweb.es/api/sentry-test  # endpoint que tira excepción
+curl -X GET https://wyweb.net/api/sentry-test  # endpoint que tira excepción
 ```
 
 > Ese endpoint NO existe por defecto — créalo solo para probar y bórralo
@@ -138,7 +138,7 @@ curl -X GET https://wyweb.es/api/sentry-test  # endpoint que tira excepción
 > export async function GET() { throw new Error('Sentry test'); }
 > ```
 
-A los 5–10 segundos verás el error en `https://errors.wyweb.es/<org>/<project>/issues/`.
+A los 5–10 segundos verás el error en `https://errors.wyweb.net/<org>/<project>/issues/`.
 
 ---
 
@@ -219,7 +219,7 @@ Lo mismo aplica a Plausible Cloud si el self-hosted da problemas.
 La clave debe ser ≥ 64 chars. Genera con `openssl rand -base64 64`.
 
 ### Plausible: el script carga pero no llegan eventos
-Revisa que `data-api` apunta a `https://analytics.wyweb.es/api/event` y que
+Revisa que `data-api` apunta a `https://analytics.wyweb.net/api/event` y que
 ese endpoint devuelve 202 ante un POST de prueba.
 
 ### Glitchtip: "permission denied" al crear migración
@@ -232,7 +232,7 @@ docker exec -it glitchtip-web ./manage.py migrate
 ### Glitchtip: errores no llegan
 1. Verifica que `SENTRY_DSN` está bien en Coolify (sin trailing slash).
 2. En el navegador, abre DevTools → Network y busca POST a
-   `errors.wyweb.es/api/.../envelope/`. Si está en rojo, el cliente no llega.
+   `errors.wyweb.net/api/.../envelope/`. Si está en rojo, el cliente no llega.
 3. Si llega 401: chequea el DSN.
 4. Si llega 200 pero no aparece: revisa logs del worker
    (`docker logs glitchtip-worker`).

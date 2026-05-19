@@ -423,7 +423,7 @@ export const settings = pgTable('settings', {
     .default(30),
   // Email
   emailFromName: text('email_from_name').notNull().default('Wyweb'),
-  emailFromAddress: citext('email_from_address').notNull().default('no-reply@wyweb.es'),
+  emailFromAddress: citext('email_from_address').notNull().default('no-reply@wyweb.net'),
   emailReplyTo: citext('email_reply_to'),
   emailFooterHtml: text('email_footer_html'),
   // Plantillas custom: { [key]: { subject: string, body: string } }

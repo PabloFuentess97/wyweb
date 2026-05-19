@@ -21,14 +21,14 @@ durante un incidente.
 
 | Recurso              | Cómo entrar                                          |
 | -------------------- | ---------------------------------------------------- |
-| VPS Hetzner SSH      | `ssh deploy@wyweb.es` (clave en gestor de contraseñas) |
-| Coolify panel        | https://coolify.wyweb.es (admin pwd en vault)        |
+| VPS Hetzner SSH      | `ssh deploy@wyweb.net` (clave en gestor de contraseñas) |
+| Coolify panel        | https://coolify.wyweb.net (admin pwd en vault)        |
 | Hetzner Robot        | https://robot.hetzner.com (cuenta org + 2FA)         |
 | Cloudflare DNS       | https://dash.cloudflare.com (cuenta org + 2FA)       |
 | Resend (email)       | https://resend.com (cuenta org + 2FA)                |
-| MinIO consola        | https://s3-console.wyweb.es (basic auth + creds)     |
-| Glitchtip            | https://errors.wyweb.es                              |
-| Plausible            | https://analytics.wyweb.es                           |
+| MinIO consola        | https://s3-console.wyweb.net (basic auth + creds)     |
+| Glitchtip            | https://errors.wyweb.net                              |
+| Plausible            | https://analytics.wyweb.net                           |
 
 ---
 
@@ -40,7 +40,7 @@ durante un incidente.
 2. Si los logs están vacíos: el container está caído. **Restart** desde Coolify.
 3. Si logs muestran `connection refused` a DB:
    ```bash
-   ssh deploy@wyweb.es
+   ssh deploy@wyweb.net
    docker ps | grep wyweb-net-db
    docker logs --tail 100 wyweb-net-db
    ```
@@ -89,7 +89,7 @@ Sigue [docs/backups.md §7](./backups.md#7-runbook-de-incidente-pérdida-de-dato
 
 1. Verifica con un usuario de prueba:
    ```bash
-   curl -X POST https://wyweb.es/api/auth/callback/credentials \
+   curl -X POST https://wyweb.net/api/auth/callback/credentials \
      -d 'email=tu@email.com&password=correcta'
    ```
 2. Logs de la app → busca errores en el callback `signIn`.
@@ -112,7 +112,7 @@ Sigue [docs/backups.md §7](./backups.md#7-runbook-de-incidente-pérdida-de-dato
 3. Si MinIO está caído → la emisión funciona pero el PDF no se genera. Revisa:
    ```bash
    docker logs wyweb-net-minio --tail 100
-   curl https://s3.wyweb.es/minio/health/live
+   curl https://s3.wyweb.net/minio/health/live
    ```
 4. **No bajes manualmente el contador** — emite en una nueva serie si necesitas
    un número provisional.
@@ -126,7 +126,7 @@ Sigue [docs/backups.md §7](./backups.md#7-runbook-de-incidente-pérdida-de-dato
    docker exec wyweb-net-minio mc ls local/wyweb-net/invoices/ | head
    ```
 2. Si los archivos están pero las URLs firmadas dan 403:
-   - Revisa `MINIO_SERVER_URL` env var (debe ser `https://s3.wyweb.es`).
+   - Revisa `MINIO_SERVER_URL` env var (debe ser `https://s3.wyweb.net`).
    - Revisa que la service account de S3 que usa la app tiene permisos
      `s3:GetObject` sobre `wyweb-net/*`.
 3. Re-emite la factura → genera nuevo PDF (la anterior queda emitida pero
@@ -141,8 +141,8 @@ Sigue [docs/backups.md §7](./backups.md#7-runbook-de-incidente-pérdida-de-dato
 1. Resend dashboard → **Logs** → buscar fallos del último día.
 2. Verifica DKIM/SPF/DMARC del dominio:
    ```bash
-   dig TXT wyweb.es
-   dig TXT _dmarc.wyweb.es
+   dig TXT wyweb.net
+   dig TXT _dmarc.wyweb.net
    ```
 3. Si Resend está OK → el problema puede ser greylisting del receptor.
    Reintentar manualmente desde el panel de Resend.
@@ -170,7 +170,7 @@ Sigue [docs/backups.md §7](./backups.md#7-runbook-de-incidente-pérdida-de-dato
 1. Coolify no incluye cron jobs nativos para apps. Si usas un cron externo
    (ej. `cron-job.org` o un cron en el host) verifica que llama a:
    ```
-   POST https://wyweb.es/api/cron/sla-check
+   POST https://wyweb.net/api/cron/sla-check
    Authorization: Bearer <CRON_SECRET>
    ```
 2. Logs de la app → busca `[cron/sla]`.
@@ -211,7 +211,7 @@ Frecuencia: trimestral.
 
 Recomendado para aplicar updates del kernel:
 ```bash
-ssh deploy@wyweb.es
+ssh deploy@wyweb.net
 sudo apt-get update && sudo apt-get upgrade -y
 sudo reboot
 ```
@@ -225,10 +225,10 @@ Si quieres zero-downtime puedes mover el DNS a un VPS standby por 5 min.
 
 ```bash
 # Ver logs de la app en vivo
-ssh deploy@wyweb.es "docker logs -f wyweb-net-app --tail 100"
+ssh deploy@wyweb.net "docker logs -f wyweb-net-app --tail 100"
 
 # Conectar a la BD
-ssh deploy@wyweb.es "docker exec -it wyweb-net-db psql -U wyweb -d wyweb"
+ssh deploy@wyweb.net "docker exec -it wyweb-net-db psql -U wyweb -d wyweb"
 
 # Ver clientes activos
 SELECT count(*) FROM customers WHERE status = 'active' AND deleted_at IS NULL;
@@ -243,13 +243,13 @@ docker exec wyweb-net-db psql -U wyweb -d wyweb -c \
   "SELECT pg_size_pretty(pg_database_size('uxea_net'));"
 
 # Disco del VPS
-ssh deploy@wyweb.es "df -h"
+ssh deploy@wyweb.net "df -h"
 
 # RAM/CPU
-ssh deploy@wyweb.es "docker stats --no-stream"
+ssh deploy@wyweb.net "docker stats --no-stream"
 
 # Reiniciar app
-ssh deploy@wyweb.es "docker restart wyweb-net-app"
+ssh deploy@wyweb.net "docker restart wyweb-net-app"
 
 # Smoke test producción (fuera del VPS, desde tu local)
 pnpm smoke:prod

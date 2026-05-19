@@ -77,10 +77,10 @@ export function PasswordResetEmail({ name, resetUrl, expiresAt }: Props) {
                 <strong>El enlace caduca el {expiresStr}.</strong> Si no fuiste tú quien
                 solicitó este cambio, ignora este correo y avísanos en{' '}
                 <Link
-                  href="mailto:hola@wyweb.es"
+                  href="mailto:hola@wyweb.net"
                   className="text-[#3B5BDB] underline-offset-4"
                 >
-                  hola@wyweb.es
+                  hola@wyweb.net
                 </Link>
                 .
               </Text>

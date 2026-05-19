@@ -333,7 +333,7 @@ pnpm docker:down           # Para todo
 pnpm docker:logs           # Tail logs app
 
 # Producción
-pnpm smoke:prod       # Smoke test contra https://wyweb.es
+pnpm smoke:prod       # Smoke test contra https://wyweb.net
 ```
 
 ---
@@ -501,6 +501,6 @@ Propietario · Wyweb · Todos los derechos reservados.
 
 <div align="center">
 
-**Made with care in 🇪🇸 by [Wyweb](https://wyweb.es)**
+**Made with care in 🇪🇸 by [Wyweb](https://wyweb.net)**
 
 </div>

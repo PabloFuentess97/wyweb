@@ -63,10 +63,10 @@ export default async function AreaClienteDashboard() {
               Tu cuenta de usuario aún no está vinculada a un cliente. Contacta con
               soporte en{' '}
               <a
-                href="mailto:hola@wyweb.es"
+                href="mailto:hola@wyweb.net"
                 className="text-[var(--color-accent)] underline-offset-4 hover:underline"
               >
-                hola@wyweb.es
+                hola@wyweb.net
               </a>{' '}
               para que activen tu acceso.
             </p>

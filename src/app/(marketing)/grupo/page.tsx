@@ -218,8 +218,8 @@ export default function GrupoPage() {
             description="Primera reunión sin compromiso. Si encaja, te planteamos diseño, plazos y presupuesto."
             primaryCta={{ label: 'Solicitar propuesta', href: '/contacto' }}
             secondaryCta={{
-              label: 'hola@wyweb.es',
-              href: 'mailto:hola@wyweb.es',
+              label: 'hola@wyweb.net',
+              href: 'mailto:hola@wyweb.net',
             }}
           />
         </div>

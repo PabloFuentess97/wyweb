@@ -3,7 +3,7 @@ import { env } from '@/lib/env';
 
 const APP_URL = env.NEXT_PUBLIC_APP_URL.replace(/\/$/, '');
 const isProd =
-  APP_URL.startsWith('https://wyweb.es') || APP_URL === 'https://wyweb.es';
+  APP_URL.startsWith('https://wyweb.net') || APP_URL === 'https://wyweb.net';
 
 export default function robots(): MetadataRoute.Robots {
   if (!isProd) {

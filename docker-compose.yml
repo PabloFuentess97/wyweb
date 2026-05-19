@@ -109,8 +109,8 @@ services:
       AUTH_URL: ${AUTH_URL:-http://localhost:3000}
       AUTH_TRUST_HOST: "true"
       RESEND_API_KEY: ${RESEND_API_KEY:-}
-      EMAIL_FROM: ${EMAIL_FROM:-Wyweb <noreply@wyweb.es>}
-      EMAIL_TO_LEADS: ${EMAIL_TO_LEADS:-info@wyweb.es}
+      EMAIL_FROM: ${EMAIL_FROM:-Wyweb <noreply@wyweb.net>}
+      EMAIL_TO_LEADS: ${EMAIL_TO_LEADS:-info@wyweb.net}
       APP_ENCRYPTION_KEY: ${APP_ENCRYPTION_KEY:-}
       CRON_SECRET: ${CRON_SECRET:-}
       BILLING_PROVIDER: ${BILLING_PROVIDER:-self-built}

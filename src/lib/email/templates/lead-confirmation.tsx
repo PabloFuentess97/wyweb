@@ -45,10 +45,10 @@ export function LeadConfirmationEmail({ name, appUrl }: Props) {
               <Text className="mt-3 mb-0 text-[16px] leading-[1.65] text-[#0E1120]">
                 Si lo prefieres, puedes escribirnos directamente a{' '}
                 <Link
-                  href="mailto:hola@wyweb.es"
+                  href="mailto:hola@wyweb.net"
                   className="text-[#3B5BDB] underline-offset-4"
                 >
-                  hola@wyweb.es
+                  hola@wyweb.net
                 </Link>{' '}
                 o llamarnos al <strong>+34 958 000 000</strong>.
               </Text>
@@ -93,7 +93,7 @@ export function LeadConfirmationEmail({ name, appUrl }: Props) {
               UXEA · GRUPO UXEA SOLUCIONES SL · GRANADA · ES
             </Text>
             <Text className="mt-1 text-[11px] text-[#78716C] m-0">
-              Recibes este email porque has rellenado el formulario en wyweb.es.
+              Recibes este email porque has rellenado el formulario en wyweb.net.
             </Text>
           </Container>
         </Body>

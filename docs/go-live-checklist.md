@@ -14,9 +14,9 @@ porque "debería funcionar".
 ### Infraestructura
 
 - [ ] VPS Hetzner CCX23 provisionado, accesible vía SSH (no root, key-based)
-- [ ] DNS apuntando: `wyweb.es`, `www`, `s3`, `s3-console`, `analytics`,
+- [ ] DNS apuntando: `wyweb.net`, `www`, `s3`, `s3-console`, `analytics`,
       `errors`, `coolify` (ver [deploy.md §2](./deploy.md#2-dns))
-- [ ] Coolify instalado y accesible en `https://coolify.wyweb.es`
+- [ ] Coolify instalado y accesible en `https://coolify.wyweb.net`
 - [ ] Postgres 16 corriendo + healthcheck verde
 - [ ] Redis 7 corriendo + healthcheck verde
 - [ ] MinIO corriendo, bucket `wyweb-net` creado, service account con permisos
@@ -37,9 +37,9 @@ porque "debería funcionar".
 
 ### Email
 
-- [ ] Resend dashboard → dominio `wyweb.es` verificado (DKIM, SPF, DMARC todos
+- [ ] Resend dashboard → dominio `wyweb.net` verificado (DKIM, SPF, DMARC todos
       en verde)
-- [ ] Email de prueba enviado y recibido (`info@wyweb.es` o similar)
+- [ ] Email de prueba enviado y recibido (`info@wyweb.net` o similar)
 - [ ] Plantillas tested:
   - [ ] Bienvenida cliente
   - [ ] Reset password
@@ -48,8 +48,8 @@ porque "debería funcionar".
 
 ### Observabilidad
 
-- [ ] Plausible accesible en `analytics.wyweb.es`, site `wyweb.es` registrado
-- [ ] Glitchtip accesible en `errors.wyweb.es`, project `wyweb-net` creado
+- [ ] Plausible accesible en `analytics.wyweb.net`, site `wyweb.net` registrado
+- [ ] Glitchtip accesible en `errors.wyweb.net`, project `wyweb-net` creado
 - [ ] DSN de Glitchtip configurado en `SENTRY_DSN` y `NEXT_PUBLIC_SENTRY_DSN`
 - [ ] **Test de error**: provocar exception → aparece en Glitchtip ≤ 30s
 - [ ] **Test de pageview**: visitar la home → contador en Plausible se
@@ -82,7 +82,7 @@ porque "debería funcionar".
   - [ ] Logo URL
   - [ ] IBAN + entidad bancaria
   - [ ] Pie de factura
-  - [ ] Remitente de emails: `Wyweb <noreply@wyweb.es>`
+  - [ ] Remitente de emails: `Wyweb <noreply@wyweb.net>`
 - [ ] Seed inicial: si tienes clientes existentes a importar, hazlo ahora vía
       `scripts/seed-customers.ts` o SQL directo
 - [ ] Estado de servicios sembrado para los clientes importados
@@ -96,7 +96,7 @@ porque "debería funcionar".
   - [ ] `/legal/aviso-legal` con datos legales reales (CIF, dirección, email)
   - [ ] `/legal/cookies` (incluso sin cookies por Plausible, declarar técnicas)
 - [ ] OG images verificadas: visita
-      https://www.opengraph.xyz/url/https%3A%2F%2Fwyweb.es
+      https://www.opengraph.xyz/url/https%3A%2F%2Fwyweb.net
 - [ ] Favicon en `/favicon.svg` y `/apple-touch-icon.png` se cargan bien
 
 ### Hardening
@@ -133,7 +133,7 @@ porque "debería funcionar".
 
 ### Performance
 
-- [ ] WebPageTest en `https://wyweb.es`:
+- [ ] WebPageTest en `https://wyweb.net`:
   - [ ] FCP < 1.5s
   - [ ] LCP < 2.5s
   - [ ] CLS < 0.1
@@ -213,7 +213,7 @@ porque "debería funcionar".
 2. Si no cubre el caso → rollback al deploy anterior:
    - Coolify → app → **Deployments** → click en el deploy anterior →
      **Restore**.
-3. Comunica el incidente: `incidents@wyweb.es` o canal Slack.
+3. Comunica el incidente: `incidents@wyweb.net` o canal Slack.
 4. Documenta lo que pasó en `docs/incidents/YYYY-MM-DD-<slug>.md` aunque sea
    una nota corta.
 5. **Después** del incidente, escribe el post-mortem completo.

@@ -182,7 +182,7 @@ export default function ServiciosHub() {
             }
             description="Cuéntanos la situación y te decimos qué auditaríamos primero. Sin venderte nada."
             primaryCta={{ label: 'Solicitar propuesta', href: '/contacto' }}
-            secondaryCta={{ label: 'hola@wyweb.es', href: 'mailto:hola@wyweb.es' }}
+            secondaryCta={{ label: 'hola@wyweb.net', href: 'mailto:hola@wyweb.net' }}
           />
         </div>
       </section>

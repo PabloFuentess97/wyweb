@@ -90,10 +90,10 @@ export default function ContactoPage() {
                   label="Email"
                   value={
                     <a
-                      href="mailto:hola@wyweb.es"
+                      href="mailto:hola@wyweb.net"
                       className="text-[var(--color-fg-strong)] hover:text-[var(--color-accent)] transition-colors font-medium"
                     >
-                      hola@wyweb.es
+                      hola@wyweb.net
                     </a>
                   }
                 />

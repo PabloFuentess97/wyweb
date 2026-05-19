@@ -103,7 +103,7 @@ const blogTeasers = [
   },
 ] as const;
 
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://wyweb.es';
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://wyweb.net';
 
 const organizationJsonLd = {
   '@context': 'https://schema.org',
@@ -112,7 +112,7 @@ const organizationJsonLd = {
   name: 'Wyweb',
   url: APP_URL,
   logo: `${APP_URL}/og-default.png`,
-  email: 'hola@wyweb.es',
+  email: 'hola@wyweb.net',
   foundingDate: '2020',
   description:
     'Agencia de diseño web, SaaS a medida, ecommerce, SEO y mantenimiento para autónomos, pymes y empresas.',
@@ -343,7 +343,7 @@ export default function HomePage() {
             }
             description="Primera reunión sin compromiso. Si encaja, te planteamos diseño, plazos y presupuesto. Si no, te decimos a quién recurrir."
             primaryCta={{ label: 'Solicitar propuesta', href: '/contacto' }}
-            secondaryCta={{ label: 'hola@wyweb.es', href: 'mailto:hola@wyweb.es' }}
+            secondaryCta={{ label: 'hola@wyweb.net', href: 'mailto:hola@wyweb.net' }}
           />
         </div>
       </section>

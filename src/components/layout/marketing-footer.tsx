@@ -61,10 +61,10 @@ export function MarketingFooter() {
               <li className="flex items-center gap-2">
                 <Mail className="h-3.5 w-3.5 shrink-0" strokeWidth={1.5} />
                 <a
-                  href="mailto:hola@wyweb.es"
+                  href="mailto:hola@wyweb.net"
                   className="hover:text-[var(--color-fg-strong)] transition-colors"
                 >
-                  hola@wyweb.es
+                  hola@wyweb.net
                 </a>
               </li>
               <li className="flex items-center gap-2">
