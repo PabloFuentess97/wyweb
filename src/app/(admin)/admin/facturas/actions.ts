@@ -1,6 +1,8 @@
 'use server';
 
+import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
+import { z } from 'zod';
 import { auth } from '@/lib/auth';
 import { createBillingProvider } from '@/lib/billing/provider';
 import {
@@ -12,7 +14,11 @@ import {
 export type ActionState =
   | { status: 'idle' }
   | { status: 'success'; message?: string }
-  | { status: 'error'; message: string };
+  | {
+      status: 'error';
+      message: string;
+      fieldErrors?: Record<string, string>;
+    };
 
 async function requireStaff() {
   const session = await auth();
@@ -83,6 +89,99 @@ export async function markInvoicePaidAction(
   } catch (e) {
     return mapBillingError(e);
   }
+}
+
+const lineSchema = z.object({
+  description: z.string().min(1, 'Descripción requerida').max(500),
+  quantity: z.coerce.number().positive('Cantidad > 0').max(99999),
+  unitPriceCents: z.coerce.number().int().min(0).max(99_999_999),
+  vatRate: z.coerce.number().min(0).max(100),
+  irpfRate: z.coerce.number().min(0).max(100).optional().default(0),
+});
+
+const createDraftSchema = z.object({
+  customerId: z.string().uuid('Cliente requerido'),
+  notes: z
+    .string()
+    .max(2000)
+    .optional()
+    .or(z.literal('').transform(() => undefined)),
+  lines: z.array(lineSchema).min(1, 'Añade al menos una línea'),
+});
+
+/**
+ * Crea una factura draft desde FormData del form de "nueva factura".
+ * Tras crearla, redirige al detalle para que el staff pueda emitir.
+ */
+export async function createDraftInvoiceAction(
+  _prev: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  const { error: authErr, session } = await requireStaff();
+  if (authErr) return { status: 'error', message: authErr };
+
+  // Parse lines from FormData (formato lines[N][campo])
+  const linesMap = new Map<
+    number,
+    Record<string, FormDataEntryValue>
+  >();
+  for (const [key, value] of formData.entries()) {
+    const m = key.match(/^lines\[(\d+)\]\[(\w+)\]$/);
+    if (!m) continue;
+    const idx = Number(m[1]);
+    const field = m[2] as string;
+    if (!linesMap.has(idx)) linesMap.set(idx, {});
+    linesMap.get(idx)![field] = value;
+  }
+  const linesRaw = Array.from(linesMap.entries())
+    .sort(([a], [b]) => a - b)
+    .map(([, l]) => l);
+
+  const parsed = createDraftSchema.safeParse({
+    customerId: formData.get('customerId'),
+    notes: formData.get('notes'),
+    lines: linesRaw,
+  });
+
+  if (!parsed.success) {
+    const fieldErrors: Record<string, string> = {};
+    for (const issue of parsed.error.issues) {
+      const k = issue.path.map((p) => String(p)).join('.');
+      if (k && !fieldErrors[k]) fieldErrors[k] = issue.message;
+    }
+    return {
+      status: 'error',
+      message: 'Revisa los datos del formulario.',
+      fieldErrors,
+    };
+  }
+
+  const data = parsed.data;
+  let createdId: string;
+  try {
+    const provider = createBillingProvider();
+    const draft = await provider.createDraft(
+      {
+        customerId: data.customerId,
+        notes: data.notes,
+        lines: data.lines.map((l, idx) => ({
+          description: l.description,
+          quantity: l.quantity,
+          unitPriceCents: l.unitPriceCents,
+          vatRate: l.vatRate,
+          irpfRate: l.irpfRate ?? 0,
+          sortOrder: idx,
+        })),
+      },
+      session.user.id,
+    );
+    createdId = draft.id;
+  } catch (e) {
+    return mapBillingError(e);
+  }
+
+  revalidatePath('/admin/facturas');
+  redirect(`/admin/facturas/${createdId}`);
 }
 
 export async function cancelInvoiceAction(

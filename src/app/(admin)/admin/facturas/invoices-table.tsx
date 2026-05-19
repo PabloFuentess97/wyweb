@@ -147,10 +147,11 @@ export function InvoicesTable({
       getRowId={(r) => r.id}
       emptyState={{
         title: 'Sin facturas',
-        description: 'No hay facturas registradas en el sistema.',
+        description:
+          'Aún no hay facturas. Empieza creando una nueva — la primera se numerará automáticamente.',
         action: (
-          <Button variant="ghost" size="sm" disabled>
-            Emisión disponible en F4
+          <Button asChild variant="accent" size="sm">
+            <Link href="/admin/facturas/nueva">Crear primera factura</Link>
           </Button>
         ),
       }}
