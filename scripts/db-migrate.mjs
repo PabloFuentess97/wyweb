@@ -14,9 +14,26 @@ async function main() {
     process.exit(1);
   }
 
-  const ssl = url.includes('localhost') || url.includes('127.0.0.1') || url.includes('@db:')
-    ? false
-    : 'require';
+  // Detecta SSL: localhost/IPs privadas/hostname-sin-punto (red Docker) = false
+  function detectSsl(u) {
+    if (/[?&]sslmode=disable/i.test(u)) return false;
+    if (/[?&]sslmode=(require|verify-full)/i.test(u)) return 'require';
+    try {
+      const host = new URL(u).hostname;
+      if (
+        host === 'localhost' ||
+        host === '127.0.0.1' ||
+        host.startsWith('192.168.') ||
+        host.startsWith('10.') ||
+        /^172\.(1[6-9]|2[0-9]|3[01])\./.test(host)
+      ) return false;
+      if (!host.includes('.')) return false; // hostname Docker interno
+      return 'require';
+    } catch {
+      return 'require';
+    }
+  }
+  const ssl = detectSsl(url);
 
   console.log(`▸ Conectando a Postgres (ssl=${ssl})…`);
   const migrationClient = postgres(url, { max: 1, ssl });

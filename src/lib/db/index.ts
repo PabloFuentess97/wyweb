@@ -4,10 +4,39 @@ import postgres from 'postgres';
 import { env } from '@/lib/env';
 import * as schema from './schema';
 
-const ssl =
-  env.DATABASE_URL.includes('localhost') || env.DATABASE_URL.includes('127.0.0.1')
-    ? false
-    : 'require';
+/**
+ * Detecta si la URL apunta a red interna (localhost, IP local, o hostname
+ * Docker sin dominio público). En esos casos no fuerza SSL porque:
+ * - Postgres en docker-compose / Coolify no tiene TLS configurado por defecto
+ * - El tráfico va por red privada del cluster, no por internet
+ * Para conexiones externas (managed providers), fuerza SSL.
+ *
+ * Override manual: añade `?sslmode=require` o `?sslmode=disable` a la URL.
+ */
+function detectSsl(url: string): false | 'require' | 'prefer' {
+  if (/[?&]sslmode=disable/i.test(url)) return false;
+  if (/[?&]sslmode=(require|verify-full)/i.test(url)) return 'require';
+  try {
+    const host = new URL(url).hostname;
+    // localhost o IPs privadas (RFC 1918) → no SSL
+    if (
+      host === 'localhost' ||
+      host === '127.0.0.1' ||
+      host.startsWith('192.168.') ||
+      host.startsWith('10.') ||
+      /^172\.(1[6-9]|2[0-9]|3[01])\./.test(host)
+    ) {
+      return false;
+    }
+    // Hostname sin punto = nombre interno Docker / Coolify (red privada)
+    if (!host.includes('.')) return false;
+    return 'require';
+  } catch {
+    return 'require';
+  }
+}
+
+const ssl = detectSsl(env.DATABASE_URL);
 
 // Singleton del cliente postgres en development para evitar conexiones acumuladas
 // con el HMR. En production cada instancia mantiene su pool.
